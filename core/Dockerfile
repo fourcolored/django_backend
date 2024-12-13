@@ -1,6 +1,5 @@
 FROM python:3.11
 WORKDIR /app
-# COPY ./nginx .
 
 COPY requirements.txt .
 

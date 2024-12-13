@@ -34,6 +34,8 @@ test:
     - docker-compose up -d
     - docker-compose exec web1 python manage.py test
     - echo "End Testing."
+  after_script:
+    - docker-compose down
 
 deploy:
   stage: deploy
