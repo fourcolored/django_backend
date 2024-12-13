@@ -28,6 +28,7 @@ test:
   stage: test
   script:
     - echo "Start Testing ..."
+    - docker-compose up -d
     - docker-compose exec web1 python manage.py test
     - echo "End Testing."
 
