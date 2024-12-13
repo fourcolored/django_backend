@@ -12,7 +12,7 @@ x-def-web-server: &web
     - celery
   environment:
     - DEBUG=True
-
+  # env_file: ./core/config/.env
 
 services:
   primary-db:
@@ -21,9 +21,9 @@ services:
       - primary-data:/var/lib/postgresql/data
       - ./storage/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
     environment:
-      POSTGRES_DB: ecommerce
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: primary
+      POSTGRES_DB: ${PRIMARY_DB_NAME}
+      POSTGRES_USER: ${PRIMARY_DB_USER}
+      POSTGRES_PASSWORD: ${PRIMARY_DB_PASSWORD}
       POSTGRES_HOST_AUTH_METHOD: "scram-sha-256\nhost replication all 0.0.0.0/0 md5"
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     command: |
@@ -39,6 +39,7 @@ services:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 30s
       retries: 3
+    # env_file: ./core/config/.env
   
   replica-db:
     image: postgres
@@ -46,8 +47,8 @@ services:
       - replica-data:/var/lib/postgresql/data
       - ./storage/replica_db/config/postgresql.conf:/config/postgresql.conf
     environment:
-      PGUSER: replica
-      PGPASSWORD: replica-db
+      PGUSER: ${REPLICA_DB_USER}
+      PGPASSWORD: ${REPLICA_DB_PASSWORD}
     ports:
       - "5439:5432"
     command: |
@@ -64,6 +65,7 @@ services:
       "
     depends_on:
       - primary-db
+    # env_file: ./core/config/.env
       
   redis:
     image: redis
@@ -88,7 +90,7 @@ services:
     volumes:
       - ./core:/app
     environment:
-      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672/
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
       - DJANGO_SETTINGS_MODULE=core.settings
     depends_on:
       - rabbitmq

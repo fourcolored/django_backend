@@ -8,11 +8,12 @@ stages:
   - deploy
 
 variables:
-  DOCKER_IMAGE: docker
   LOG_FILE_NAME: gitlab_logs.txt
   DB_USER: postgres
   DB_NAME: ecommerce
+  DB_CONTAINER: primary-db 
   REPLICA_USER: replica
+  ENV_PATH: ./core/config/.env
 
 before_script:
   - apk add --no-cache py-pip
@@ -31,7 +32,7 @@ test:
   stage: test
   script:
     - echo "Start Testing ..."
-    - docker-compose up -d
+    - docker-compose --env-file $ENV_PATH up -d
     - docker-compose exec web1 python manage.py test
     - echo "End Testing."
   after_script:
@@ -41,11 +42,6 @@ deploy:
   stage: deploy
   script:
     - echo "Start Deploying"
-    - docker-compose run --rm web1 python manage.py makemigrations
-    - docker-compose run --rm web1 python manage.py migrate
-    - echo "Granting SELECT privileges on primary DB to replicas"
-    - |
-      docker-compose exec primary-db psql -U $DB_USER -d $DB_NAME -c "
-        GRANT SELECT ON ALL TABLES IN SCHEMA public TO $REPLICA_USER;
-      "
+    - docker-compose --env-file $ENV_PATH run --rm web1 python manage.py makemigrations
+    - docker-compose --env-file $ENV_PATH run --rm web1 python manage.py migrate
     - echo "End Deploying"

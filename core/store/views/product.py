@@ -115,7 +115,7 @@ class ProductDetailView(APIView):
 
     def get(self, request, id):
         """
-        Get product details [with reviews]
+        Get product details 
         """
         instance = cache.get(f"product_{id}")
         if not instance:

@@ -13,19 +13,23 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
+import sys
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+dotenv_path = os.path.join(BASE_DIR, 'config', '.env')
+load_dotenv(dotenv_path)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-s2iw2q+3fces&e7ip1y1fm6_^8dn42f692dxonexke@7@-nc76'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # ALLOWED_HOSTS = []
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web1']
@@ -42,13 +46,11 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'rest_framework_simplejwt',
-    "debug_toolbar",
     'celery',
-    # 'sslserver',
+    'django_prometheus',
 
     'users',
     'store',
-    'django_prometheus',
 ]
 
 MIDDLEWARE = [
@@ -61,8 +63,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
 
     'core.middleware.security.SecurityMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
@@ -92,30 +92,22 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ecommerce',
-        'USER': 'postgres',
-        'PASSWORD': 'primary',
-        'HOST': 'primary-db',
-        # 'HOST': 'localhost',
-        'PORT': '5432', #'5438',
+        'NAME': os.getenv('PRIMARY_DB_NAME'),
+        'USER': os.getenv('PRIMARY_DB_USER'),
+        'PASSWORD': os.getenv('PRIMARY_DB_PASSWORD'),
+        'HOST': os.getenv('PRIMARY_DB_HOST'),
+        'PORT': os.getenv('PRIMARY_DB_PORT'),
     },
     'replica': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ecommerce',
-        'USER': 'replica',
-        'PASSWORD': 'replica-db',
-        'HOST': 'replica-db',
-        # 'HOST': 'localhost',
-        'PORT': '5432', #'5439',
+        'NAME': os.getenv('REPLICA_DB_NAME'),
+        'USER': os.getenv('REPLICA_DB_USER'),
+        'PASSWORD': os.getenv('REPLICA_DB_PASSWORD'),
+        'HOST': os.getenv('REPLICA_DB_HOST'),
+        'PORT': os.getenv('REPLICA_DB_PORT'),
     },
 }
 # Password validation
@@ -171,8 +163,7 @@ DEBUG_TOOLBAR_CONFIG = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        # "LOCATION": "redis://127.0.0.1:6379",
-        "LOCATION": "redis://redis:6379",
+        "LOCATION": f"redis://{os.getenv('REDIS_HOST')}",
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
@@ -193,6 +184,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
@@ -202,18 +194,17 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME_LATE_USER': timedelta(days=30),
 }
 
-import sys
 TESTING = "test" in sys.argv
 
-# if not TESTING:
-#     INSTALLED_APPS = [
-#         *INSTALLED_APPS,
-#         "debug_toolbar",
-#     ]
-#     MIDDLEWARE = [
-#         "debug_toolbar.middleware.DebugToolbarMiddleware",
-#         *MIDDLEWARE,
-#     ]
+if not TESTING:
+    INSTALLED_APPS = [
+        *INSTALLED_APPS,
+        "debug_toolbar",
+    ]
+    MIDDLEWARE = [
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+        *MIDDLEWARE,
+    ]
 
 LOGGING = {
     'version': 1,
@@ -236,6 +227,6 @@ LOGGING = {
     },
 }
 
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'amqp://guest:guest@rabbitmq:5672/')
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
