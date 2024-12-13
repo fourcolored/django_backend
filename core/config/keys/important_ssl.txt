@@ -1,0 +1,87 @@
+cisco@labvm:~$ ls
+clientinfo.etc  Desktop    Downloads        public_key.pem  signature
+contract.txt    Documents  private_key.pem  report.txt      workspace
+cisco@labvm:~$ mdkir backend
+Command 'mdkir' not found, did you mean:
+  command 'mdir' from deb mtools (4.0.33-1+really4.0.32-1build1)
+  command 'mkdir' from deb coreutils (8.32-4.1ubuntu1.2)
+Try: sudo apt install <deb name>
+cisco@labvm:~$ mkdir high_load
+cisco@labvm:~$ cd high_load/
+cisco@labvm:~/high_load$ ^C
+cisco@labvm:~/high_load$ openssl genpkey -algorithm RSA -out key.pem
+..+......+.....+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*...+...+.......+.....+......+....+...+..............+.+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*...........+...+......+....+......+........+...+....+..............+...........................+...+.+...+...+..+...+..........+...............+..+...+.............+......+........+.+..+.......+.....+.+...........+......+...+......+.+..+...+...+....+......+...........+..........+.....+..................+.+..+..................+.+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+............+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*..+......+....+..+...+......+.+.....+....+........+.+.....+.+...+......+...........+.+...+.....+......+.+.....+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*..+............+......+......+....+..+..........+..+.......+...+...+.....+..........+..............+......+.......+...+...+.........+...+..+.+...........+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+cisco@labvm:~/high_load$ openssl req -new -key key.pem -out csr.pem
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:KZ
+State or Province Name (full name) [Some-State]:Random
+Locality Name (eg, city) []:XX
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:No
+Organizational Unit Name (eg, section) []:No
+Common Name (e.g. server FQDN or YOUR name) []:No
+Email Address []:No
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:password
+An optional company name []:
+cisco@labvm:~/high_load$ openssl x509 -req -in csr.pem -signkey key.pem -out cert.pem
+Certificate request self-signature ok
+subject=C = KZ, ST = Random, L = XX, O = No, OU = No, CN = No, emailAddress = No
+cisco@labvm:~/high_load$ cat cert.pem
+-----BEGIN CERTIFICATE-----
+MIIDUTCCAjkCFC5i4m+D7edRcwP+NYhyO4F6HKyGMA0GCSqGSIb3DQEBCwUAMGUx
+CzAJBgNVBAYTAktaMQ8wDQYDVQQIDAZSYW5kb20xCzAJBgNVBAcMAlhYMQswCQYD
+VQQKDAJObzELMAkGA1UECwwCTm8xCzAJBgNVBAMMAk5vMREwDwYJKoZIhvcNAQkB
+FgJObzAeFw0yNDEyMTAyMjA0MzhaFw0yNTAxMDkyMjA0MzhaMGUxCzAJBgNVBAYT
+AktaMQ8wDQYDVQQIDAZSYW5kb20xCzAJBgNVBAcMAlhYMQswCQYDVQQKDAJObzEL
+MAkGA1UECwwCTm8xCzAJBgNVBAMMAk5vMREwDwYJKoZIhvcNAQkBFgJObzCCASIw
+DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANmYkuXtoQENr42b8G/i6tY1jY3G
+ie485LzvCpBi4oeDvTbmwncoEJt5d8VgKLge5nQptPXeEaYvZRN8SFlygANmYfHp
+nW/DDqgxo12vrjk5wQ+bR5swt1JccZ57N2juOuuiOYp5+HKhNcpUBQ3/vplWo226
+gqtgXiPzZ0EzTk5z3wIS9XGud5jBvZuOxohkU5l6UXh/R86szB6uAyhKG4Di1fFd
+KmrQXmow00AxPemTwTqo3GwOoYdOEvUmMTTIPBGWeXhYvIHZRbyED0G+Kw5eYMbL
+neOinyne+R2WnJxsITXnFwsIHMmVJigr2YtP7XTol5llnCcQsGAryTlw/sECAwEA
+ATANBgkqhkiG9w0BAQsFAAOCAQEAtBpCgb7CBdmMtrNen1yW+O+v2Bf0t0DkmUco
+hYpuKlo6RZWRs7FWQQFrr28exqvxdHvPtF6TSiO0LBCTjtfwTVPoKqPLb8q9NVp0
+PKjZtshyG+ht+Vy5NJca9ZvX846tXmGlQ5OjZAQ7aWsHl5Hdhl3rdnCTS4jGV4q1
+1w3y2+WjOdwPDkww4jUTPrJTZkoEOUFtqVwpX1TNC50GurBmc4r5u/6rvMC64p77
+dWyvbXoRJNpIbtpGW3oIqEIsaipkBhrqtY9A2sYP8yjq2U2YYrWNRRStSk6t4xvb
+C1cTSckHTwlcEUYF/+McT7x6xvrfDdHi+yRhTmXivCpJ7ojxKg==
+-----END CERTIFICATE-----
+cisco@labvm:~/high_load$ cat key.pem
+-----BEGIN PRIVATE KEY-----
+MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDZmJLl7aEBDa+N
+m/Bv4urWNY2NxonuPOS87wqQYuKHg7025sJ3KBCbeXfFYCi4HuZ0KbT13hGmL2UT
+fEhZcoADZmHx6Z1vww6oMaNdr645OcEPm0ebMLdSXHGeezdo7jrrojmKefhyoTXK
+VAUN/76ZVqNtuoKrYF4j82dBM05Oc98CEvVxrneYwb2bjsaIZFOZelF4f0fOrMwe
+rgMoShuA4tXxXSpq0F5qMNNAMT3pk8E6qNxsDqGHThL1JjE0yDwRlnl4WLyB2UW8
+hA9BvisOXmDGy53jop8p3vkdlpycbCE15xcLCBzJlSYoK9mLT+106JeZZZwnELBg
+K8k5cP7BAgMBAAECggEAIHTlKH3G/8C6WF2TwiSvUa9gQ28DYPFdTx86zKmrT3pj
+jV5jUGG+BGrcZij/OeOGDXqxHuF2cXrtUTg/FHSDSr6JSovFq4eFVqo8y3sqeie2
+t+y6BBiCp7rZScHoVHMAf+hNO+4QlIyeWOUqcdmdZQLq0rG4zvZLZIJoeu27tvDE
+OzbGXyVyByU08ehaDcOqfRl0z9zs7dM07k0ppSOoK7nnHye75t+uFKuUOZzYlykV
+7T/trveEVDb9x+9iKjGWeGVh0GoJ/RluJut6wQzozOkwiVy2WQYMINARawNzm04I
+MUiXrbZogq+o6supFwR9pAsenwbTt0hXkqPx9GwBlwKBgQDmZSVP8y0x10Ljxv58
+VbBsuBb8bpkIm5acpFyicMNhqDQHMvicUy1FFH90wonmQRMrj8tHWOlXlfVlwEu6
+QBLOer6H8OYzFWTyqM9asALIGwIhJcgULYVmHQJ0bNszgU73w1wuMLJyZVDNeHTB
+//GxPbsue86hkjhBkLvGJmMgUwKBgQDxx0l/k3x9FqpizaEQcAQYgz5vi6rbrcy4
+vddKhx+C4Yunf+YrsDtiBfJKrLYleAl0GU3F6wHmte5DGE3io3ryN+cxQ0IGt1Pp
+DyH08DoPt498kR/UF4yOi1tkiuTZjNTRXoO1ei70Od1BRorgbWF90LyMqW9CLSPH
+fwOUFJZSGwKBgESXQjd+JytaccCMQsFTZXXIjJdUedz1LS6vRCDcP164i9zE0P0B
+Sk3xn0xsik9xejqS0asJDlcT/v3u9NybLL4qDsU789yrduVDWpAeLIXUfJrPu7Q+
+JSPUaSGuMsgvrAnZMH1T5Bxoi1jQjroe756byTk6hLbXaEYkx7JjRUmfAoGAfbhg
+0YPBcdH9W08Nd1yn5I8qQhpgB8cB8vZUIp7MlePuGHT7HLCQ0FHDQW05cZZPZB1c
+QZQH8w2bDSxwI29amOTUxNryVEezzDZgM9tOdam/ZMiZwlFUdzKjnU5T3YPLjesV
+laIpFDmagTzLLhPyY9fMk1/vSHvsZOn41GE4IQ0CgYAEQmZFnkEOBB9ephWAufbU
+yghfU8+k57UvPSM4uctGoZYMSC+gsGE+VGSpkY3oWhrqvCBxfctCxRj0QuCl51Y/
+Z34/xIALYIoyE60f4/is6snItpo9mA3LMNpR05dvyJ07WpRkpCth9k3obfMrTxRP
+ykUH5197DstvVN6Ms+pokw==
+-----END PRIVATE KEY-----

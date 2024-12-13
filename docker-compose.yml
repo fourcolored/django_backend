@@ -1,0 +1,145 @@
+version: '3'
+
+x-def-web-server: &web
+  build: ./core
+  restart: unless-stopped
+  volumes:
+    - ./core:/app
+  depends_on:
+    - primary-db
+    - replica-db
+    - rabbitmq
+    - celery
+  environment:
+    - DEBUG=True
+
+
+services:
+  primary-db:
+    image: postgres
+    volumes:
+      - primary-data:/var/lib/postgresql/data
+      - ./storage/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: primary
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256\nhost replication all 0.0.0.0/0 md5"
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    command: |
+      postgres 
+      -c wal_level=replica 
+      -c hot_standby=on 
+      -c max_wal_senders=10 
+      -c max_replication_slots=10 
+      -c hot_standby_feedback=on
+    ports:
+      - "5438:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 30s
+      retries: 3
+  
+  replica-db:
+    image: postgres
+    volumes:
+      - replica-data:/var/lib/postgresql/data
+      - ./storage/replica_db/config/postgresql.conf:/config/postgresql.conf
+    environment:
+      PGUSER: replica
+      PGPASSWORD: replica-db
+    ports:
+      - "5439:5432"
+    command: |
+      bash -c "
+      rm -rf /var/lib/postgresql/data/*
+      until pg_basebackup --pgdata=/var/lib/postgresql/data -R --slot=replication_slot --host=primary-db --port=5432 -U replica
+      do
+        echo 'Waiting for primary to connect...'
+        sleep 1s
+      done
+      echo 'Backup done, starting replica...'
+      chmod 0700 /var/lib/postgresql/data
+      exec docker-entrypoint.sh postgres -c config_file=/config/postgresql.conf
+      "
+    depends_on:
+      - primary-db
+      
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+  
+  rabbitmq:
+    # restart: always
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_VHOST: "/"
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+  
+  celery:
+    build: ./core
+    command: celery -A core worker -l info
+    working_dir: /app
+    volumes:
+      - ./core:/app
+    environment:
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672/
+      - DJANGO_SETTINGS_MODULE=core.settings
+    depends_on:
+      - rabbitmq
+
+  web1:
+    <<: *web
+    ports:
+      - "8000:8000"
+  
+  web2:
+    <<: *web
+  
+  web3:
+    <<: *web
+
+  
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "80:80"
+    depends_on:
+      - web1
+      - web2
+      - web3
+  
+  prometheus:
+    image: prom/prometheus:v2.14.0
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:6.5.2
+    ports:
+      - "3060:3000"
+    depends_on:
+      - prometheus
+
+
+volumes:
+  primary-data:
+  replica-data:
+
+    # command: >
+    #   -c 'config_file=/config/postgresql.conf' 
+    #   -c 'hba_file=/config/pg_hba.conf'
+      # - ./storage/primary_db/config:/config
+      # - ./storage/postgressecondary:/var/lib/postgresql/data
+# - ./storage/replica_db/config:/config
