@@ -43,7 +43,7 @@ deploy:
     - docker-compose run --rm web1 python manage.py migrate
     - echo "Granting SELECT privileges on primary DB to replicas"
     - |
-      docker-compose exec -T db psql -U $DB_USER -d $DB_NAME -c "
+      docker-compose exec primary-db psql -U $DB_USER -d $DB_NAME -c "
         GRANT SELECT ON ALL TABLES IN SCHEMA public TO $REPLICA_USER;
       "
     - echo "End Deploying"
