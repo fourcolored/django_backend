@@ -10,6 +10,9 @@ stages:
 variables:
   DOCKER_IMAGE: docker
   LOG_FILE_NAME: gitlab_logs.txt
+  DB_USER: postgres
+  DB_NAME: ecommerce
+  REPLICA_USER: replica
 
 before_script:
   - apk add --no-cache py-pip
@@ -42,6 +45,5 @@ deploy:
     - |
       docker-compose exec -T db psql -U $DB_USER -d $DB_NAME -c "
         GRANT SELECT ON ALL TABLES IN SCHEMA public TO $REPLICA_USER;
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO $REPLICA_USER;
       "
     - echo "End Deploying"
