@@ -1,0 +1,171 @@
+version: '3'
+
+services:
+  primary_db:
+    image: postgres:13
+    container_name: primary_db
+    environment:
+      POSTGRES_DB: postgresdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /data
+    volumes:
+      - primary_data:/data
+      - ./storage/primary_db/config:/config
+    ports:
+      - "5432:5432"
+    command: >
+      -c 'config_file=/config/postgresql.conf' 
+      -c 'hba_file=/config/pg_hba.conf'
+    networks:
+      - postgres
+  
+  replica_db:
+    image: postgres:13
+    container_name: replica_db
+    environment:
+      POSTGRES_DB: postgresdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /data
+    volumes:
+      - replica_data:/data
+      - ./storage/replica_db/config:/config
+    ports:
+      - "5433:5432"
+    command: >
+      -c 'config_file=/config/postgresql.conf' 
+      -c 'hba_file=/config/pg_hba.conf'
+    networks:
+      - postgres
+  
+  web1:
+    build: .
+    container_name: web1
+    command: python manage.py runserver 0.0.0.0:8001
+    restart: unless-stopped
+    volumes:
+      - ./:/code
+    ports:
+      - "8001:8001"
+    depends_on:
+      # - rabbitmq
+      - primary_db
+      - replica_db
+    links:
+      - primary_db:primary_db
+      - replica_db:replica_db
+    networks:
+      - postgres
+  
+  web2:
+    build: .
+    container_name: web2
+    command: python manage.py runserver 0.0.0.0:8002
+    restart: unless-stopped
+    volumes:
+      - ./:/code 
+    ports:
+      - "8002:8002"
+    depends_on:
+      # - rabbitmq
+      - primary_db
+      - replica_db
+    links:
+      - primary_db:primary_db
+      - replica_db:replica_db
+    networks:
+      - postgres
+
+  web3:
+    build: .
+    container_name: web3
+    command: python manage.py runserver 0.0.0.0:8003
+    restart: unless-stopped
+    volumes:
+      - ./:/code
+    ports:
+      - "8003:8003"
+    depends_on:
+      # - rabbitmq
+      - primary_db
+      - replica_db
+    links:
+      - primary_db:primary_db
+      - replica_db:replica_db
+    networks:
+      - postgres
+
+  # redis:
+  #   image: redis
+  #   container_name: redis
+  #   ports:
+  #     - "6379:6379"
+  #   networks:
+  #     - postgres
+  
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - web1
+      - web2
+      - web3
+    networks:
+      - postgres
+  
+  prometheus:
+    image: prom/prometheus:v2.14.0
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - '9090:9090'
+    networks:
+      - postgres
+  grafana:
+    image: grafana/grafana:6.5.2
+    ports:
+      - '3061:3000'
+    networks:
+      - postgres
+
+  elasticsearch:
+    image: elasticsearch:7.16.0
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+    networks:
+      - postgres
+  logstash:
+    image: logstash:8.10.0
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    networks:
+      - postgres
+
+  kibana:
+    image: kibana:8.10.0
+    ports:
+      - "5601:5601"
+    networks:
+      - postgres
+  
+
+volumes:
+  primary_data:
+    external: true
+  replica_data:
+    external: true
+
+networks:
+  postgres:
+    driver: bridge
+   
