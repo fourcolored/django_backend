@@ -25,6 +25,7 @@ def get_post_detail(request, post_id):
     return render(request, 'post_detail.html', post_detail_info(post, post_id))
 
 def post_detail_info(post, post_id):
+
     comments = post.comments.select_related('author')
     recent_comments = comments.order_by('-created_date')[:5]
 
@@ -68,6 +69,7 @@ def add_comment(request, post_id):
 
 
 from django.http import HttpResponse
-def test_cache_view(request):
-    cache.set('test_key', 'Hello, Redis!', timeout=60)  # Set a key
-    return HttpResponse('Cached a value!')
+
+def my_test_500_view(request):
+    # Return an "Internal Server Error" 500 response code.
+    return HttpResponse(status=500)
